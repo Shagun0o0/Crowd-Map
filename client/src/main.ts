@@ -125,8 +125,8 @@ document.getElementById("goBtn")!.onclick = async () => {
   if (!q) return;
 
   const res = await fetch(
-    `https://nominatim.openstreetmap.org/search?format=json&q=${q}`
-  );
+  `https://nominatim.openstreetmap.org/search?format=json&q=${q}&addressdetails=1&limit=5&countrycodes=in`
+);
   const data = await res.json();
 
   if (!data.length) return alert("Place not found");
