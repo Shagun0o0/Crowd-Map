@@ -135,7 +135,7 @@ const res = await fetch(
 const data = await res.json();
 
 if (!data.length) {
-  alert("Place not found 😅 Try a bigger landmark");
+  alert("Try searching a nearby landmark 😅");
   return;
 }
   if (!q) return;
