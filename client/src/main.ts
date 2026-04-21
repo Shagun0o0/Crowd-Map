@@ -6,7 +6,7 @@ import { io } from "socket.io-client";
 import "./style.css";
 import { lightMap, darkMap, satelliteMap } from "./mapStyles";
 
-const socket = io();
+const socket = io("https://your-server.onrender.com");
 
 // ================= APP =================
 const app = document.querySelector<HTMLDivElement>("#app")!;
