@@ -6,7 +6,7 @@ import { io } from "socket.io-client";
 import "./style.css";
 import { lightMap, darkMap, satelliteMap } from "./mapStyles";
 
-const socket = io("http://localhost:3000");
+const socket = io();
 
 // ================= APP =================
 const app = document.querySelector<HTMLDivElement>("#app")!;
