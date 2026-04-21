@@ -6,12 +6,11 @@ import { io } from "socket.io-client";
 import "./style.css";
 import { lightMap, darkMap, satelliteMap } from "./mapStyles";
 
+// 🔗 CONNECT TO BACKEND
 const socket = io("https://your-server.onrender.com");
 
-// ================= APP =================
-const app = document.querySelector<HTMLDivElement>("#app")!;
-
 // ================= UI =================
+const app = document.querySelector<HTMLDivElement>("#app")!;
 app.innerHTML = `
   <div class="top-ui">
     <div class="search-box">
@@ -46,7 +45,7 @@ app.innerHTML = `
 const map = L.map("map", {
   preferCanvas: true,
   zoomControl: true,
-}).setView([30.9, 75.8], 12);
+}).setView([28.61, 77.23], 12);
 
 let currentLayer = lightMap().addTo(map);
 let currentTheme = "light";
@@ -85,7 +84,7 @@ socket.on("all-locations", (users: any[]) => {
   }
 });
 
-// ================= ROUTING =================
+// ================= ROUTE =================
 function createRoute(lat: number, lng: number) {
   if (!myLocation.lat) return alert("Waiting for location...");
 
@@ -119,33 +118,29 @@ function createRoute(lat: number, lng: number) {
   });
 }
 
-// ================= SEARCH =================
+// ================= SEARCH (FIXED 🔥) =================
 document.getElementById("goBtn")!.onclick = async () => {
-  let query = q;
-
-// fallback improvement
-if (!q.toLowerCase().includes("india")) {
-  query = q + " India";
-}
-
-const res = await fetch(
-  `https://nominatim.openstreetmap.org/search?format=json&q=${query}&addressdetails=1&limit=5`
-);
-
-const data = await res.json();
-
-if (!data.length) {
-  alert("Try searching a nearby landmark 😅");
-  return;
-}
+  const q = (document.getElementById("search") as HTMLInputElement).value;
   if (!q) return;
 
+  let query = q
+    .replace(/\d+/g, "")
+    .replace(/,/g, "");
+
+  if (!query.toLowerCase().includes("india")) {
+    query += " India";
+  }
+
   const res = await fetch(
-  `https://nominatim.openstreetmap.org/search?format=json&q=${q}&addressdetails=1&limit=5&countrycodes=in`
-);
+    `https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=5`
+  );
+
   const data = await res.json();
 
-  if (!data.length) return alert("Place not found");
+  if (!data.length) {
+    alert("Try a nearby landmark 😅");
+    return;
+  }
 
   createRoute(parseFloat(data[0].lat), parseFloat(data[0].lon));
 };
@@ -221,43 +216,7 @@ document.getElementById("themeBtn")!.onclick = () => {
   }
 };
 
-// ================= EXPLORE =================
-document.getElementById("exploreBtn")!.onclick = async () => {
-  if (!myLocation.lat) return alert("Waiting for location...");
-
-  const query = `
-    [out:json];
-    (
-      node["amenity"="cafe"](around:1000,${myLocation.lat},${myLocation.lng});
-      node["amenity"="restaurant"](around:1000,${myLocation.lat},${myLocation.lng});
-      node["tourism"="attraction"](around:1000,${myLocation.lat},${myLocation.lng});
-      node["amenity"="hospital"](around:1000,${myLocation.lat},${myLocation.lng});
-    );
-    out;
-  `;
-
-  const res = await fetch("https://overpass-api.de/api/interpreter", {
-    method: "POST",
-    body: query,
-  });
-
-  const data = await res.json();
-
-  data.elements.slice(0, 10).forEach((place: any) => {
-    const lat = place.lat;
-    const lng = place.lon;
-    const name = place.tags?.name || "Place";
-
-    const marker = L.marker([lat, lng]).addTo(map);
-    marker.bindPopup(name);
-
-    marker.on("click", () => {
-      createRoute(lat, lng);
-    });
-  });
-};
-
-// ================= MAP =================
+// ================= MAP EVENTS =================
 map.on("click", (e: any) => {
   createRoute(e.latlng.lat, e.latlng.lng);
 });
@@ -266,7 +225,7 @@ map.on("dragstart", () => {
   isFollowing = false;
 });
 
-// ================= TRACKING =================
+// ================= LOCATION TRACKING =================
 let lastUpdate = 0;
 
 navigator.geolocation.watchPosition(
@@ -295,44 +254,3 @@ navigator.geolocation.watchPosition(
   console.error,
   { enableHighAccuracy: true }
 );
-
-// ================= SERVICE WORKER =================
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js")
-      .then(() => console.log("SW registered 🔥"))
-      .catch(console.error);
-  });
-}
-
-// ================= INSTALL =================
-let deferredPrompt: any = null;
-
-window.addEventListener("beforeinstallprompt", (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-
-  console.log("INSTALL READY 🔥");
-
-  const btn = document.createElement("button");
-  btn.innerText = "Install App 📱";
-
-  btn.style.position = "fixed";
-  btn.style.bottom = "20px";
-  btn.style.right = "20px";
-  btn.style.padding = "12px 18px";
-  btn.style.background = "#ff4757";
-  btn.style.color = "white";
-  btn.style.border = "none";
-  btn.style.borderRadius = "12px";
-  btn.style.zIndex = "9999";
-
-  document.body.appendChild(btn);
-
-  btn.onclick = async () => {
-    if (!deferredPrompt) return;
-
-    deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-  };
-});
