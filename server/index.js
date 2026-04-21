@@ -6,48 +6,55 @@ const cors = require("cors");
 const app = express();
 app.use(cors());
 
-// create HTTP server
+// ================= SERVER =================
 const server = http.createServer(app);
 
-// setup socket.io
+// ================= SOCKET.IO =================
 const io = new Server(server, {
   cors: {
     origin: "*",
   },
 });
 
-// 🧠 store users (unique per socket)
+// ================= DATA =================
+// store users (socket.id → location)
 let users = {};
 
+// ================= SOCKET CONNECTION =================
 io.on("connection", (socket) => {
   console.log("✅ User connected:", socket.id);
 
-  // 📍 receive live location
+  // 📍 receive location
   socket.on("send-location", (data) => {
     users[socket.id] = data;
 
-    // send all active users to everyone
+    // broadcast all users
     io.emit("all-locations", Object.values(users));
   });
 
-  // ❌ remove user on disconnect
+  // ❌ remove user when disconnected
   socket.on("disconnect", () => {
     console.log("❌ User disconnected:", socket.id);
 
     delete users[socket.id];
 
-    // update everyone after removal
     io.emit("all-locations", Object.values(users));
   });
 });
 
-// simple test route
+// ================= TEST ROUTE =================
 app.get("/", (req, res) => {
   res.send("🚀 Crowd Map Server Running");
 });
 
-// start server
-const PORT = 3000;
+// ================= HEALTH CHECK =================
+app.get("/health", (req, res) => {
+  res.json({ status: "ok" });
+});
+
+// ================= START SERVER =================
+const PORT = process.env.PORT || 3000;
+
 server.listen(PORT, () => {
-  console.log(`🔥 Server running on http://localhost:${PORT}`);
+  console.log(`🔥 Server running on port ${PORT}`);
 });
