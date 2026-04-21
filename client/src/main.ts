@@ -121,7 +121,23 @@ function createRoute(lat: number, lng: number) {
 
 // ================= SEARCH =================
 document.getElementById("goBtn")!.onclick = async () => {
-  const q = (document.getElementById("search") as HTMLInputElement).value;
+  let query = q;
+
+// fallback improvement
+if (!q.toLowerCase().includes("india")) {
+  query = q + " India";
+}
+
+const res = await fetch(
+  `https://nominatim.openstreetmap.org/search?format=json&q=${query}&addressdetails=1&limit=5`
+);
+
+const data = await res.json();
+
+if (!data.length) {
+  alert("Place not found 😅 Try a bigger landmark");
+  return;
+}
   if (!q) return;
 
   const res = await fetch(
